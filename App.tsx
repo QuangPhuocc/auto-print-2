@@ -495,14 +495,18 @@ const App: React.FC = () => {
               >
                 {elements.map((el) => {
                   let value = '';
+                  const isAccidentField = ['accidentSeats', 'accidentAmount', 'accidentFee'].includes(el.key as string);
+                  const accidentFeeNum = parseFloat(data.accidentFee.replace(/[^0-9.-]+/g,""));
+                  const hasNoAccidentInsurance = isNaN(accidentFeeNum) || accidentFeeNum === 0 || data.accidentFee === '' || data.accidentFee === '0';
+
                   if (el.isCustom) {
                     value = el.content || '';
                   } else if (['isBusiness', 'isNotBusiness', 'isAgent'].includes(el.key)) {
                     value = getSpecialValue(el.key);
                   } else if (el.key === 'qrCode') {
                     value = finalQrValue;
-                  } else if (el.id === 'strikeLine') {
-                    value = data.accidentFee;
+                  } else if (isAccidentField && hasNoAccidentInsurance) {
+                    value = 'x';
                   } else {
                     value = (data[el.key as keyof InsuranceData] || '');
                   }
@@ -528,14 +532,18 @@ const App: React.FC = () => {
              <div className="print-area bg-white relative" style={{ width: '297mm', height: '210mm' }}>
                 {elements.map((el) => {
                   let value = '';
+                  const isAccidentField = ['accidentSeats', 'accidentAmount', 'accidentFee'].includes(el.key as string);
+                  const accidentFeeNum = parseFloat(data.accidentFee.replace(/[^0-9.-]+/g,""));
+                  const hasNoAccidentInsurance = isNaN(accidentFeeNum) || accidentFeeNum === 0 || data.accidentFee === '' || data.accidentFee === '0';
+
                   if (el.isCustom) {
                     value = el.content || '';
                   } else if (['isBusiness', 'isNotBusiness', 'isAgent'].includes(el.key)) {
                     value = getSpecialValue(el.key);
                   } else if (el.key === 'qrCode') {
                     value = finalQrValue;
-                  } else if (el.id === 'strikeLine') {
-                    value = data.accidentFee;
+                  } else if (isAccidentField && hasNoAccidentInsurance) {
+                    value = 'x';
                   } else {
                     value = (data[el.key as keyof InsuranceData] || '');
                   }

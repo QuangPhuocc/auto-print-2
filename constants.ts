@@ -44,8 +44,8 @@ export const DEFAULT_ELEMENTS: PrintableElement[] = [
   { id: '17', key: 'accidentAmount', label: 'Mức TN (Triệu)', x: 281, y: 325, fontSize: 14, fontWeight: 'bold', isVisible: true },
   { id: '18', key: 'accidentFee', label: 'Phí TN', x: 294, y: 359, fontSize: 14, fontWeight: 'bold', isVisible: true },
   
-  // Gạch chéo
-  { id: 'strikeLine', key: 'accidentFee', label: 'Gạch chéo', x: 359, y: 214, fontSize: 0, fontWeight: 'bold', isVisible: true },
+  // // Gạch chéo
+  // { id: 'strikeLine', key: 'accidentFee', label: 'Gạch chéo', x: 359, y: 214, fontSize: 0, fontWeight: 'bold', isVisible: true },
 
   { id: '20', key: 'qrCode', label: 'Mã QR', x: 324, y: 540, fontSize: 0, size: 80, fontWeight: 'bold', isVisible: true },
 ];
