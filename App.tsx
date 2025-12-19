@@ -157,20 +157,21 @@ const App: React.FC = () => {
     setSelectedIds([]);
   };
 
-    /**
+  /**
    * Logic: Nếu nội dung QR trích xuất trống, 
    * hệ thống sẽ tự động tạo link tra cứu dựa trên Số seri.
    */
-    const finalQrValue = useMemo(() => {
-      if (data.qrCode && data.qrCode.trim() !== '') {
-        return data.qrCode.trim();
-      }
-      if (data.serialNumber && data.serialNumber.trim() !== '') {
-        return `https://tracuu.vass.com.vn/a/${data.serialNumber.trim()}`;
-      }
-      return '';
-    }, [data.qrCode, data.serialNumber]);
-
+  const finalQrValue = useMemo(() => {
+    if (data.qrCode && data.qrCode.trim() !== '') {
+      return data.qrCode.trim();
+    }
+    if (data.serialNumber && data.serialNumber.trim() !== '') {
+      // Đảm bảo có path /a/ ở giữa host và seri
+      return `https://tracuu.vass.com.vn/a/${data.serialNumber.trim()}`;
+    }
+    return '';
+  }, [data.qrCode, data.serialNumber]);
+  
   const renderInput = (key: keyof InsuranceData, placeholder = "...", customLabel?: string) => (
     <div className="flex flex-col space-y-1 w-full">
       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{customLabel || LABEL_MAP[key] || key}</label>

@@ -32,6 +32,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 4. Tai nạn lái phụ xe: accidentSeats, accidentAmount, accidentFee.
 5. Xe: serialNumber, ownerName, address, licensePlate, chassisNumber, engineNumber, vehicleType, weight, seats, purpose.
 6. QR Code: Nội dung chuỗi QR.
+QUY TẮC QUAN TRỌNG: 
+            - Nếu bất kỳ thông tin nào không tìm thấy, không đọc được hoặc không có trong tài liệu, hãy để giá trị là chuỗi trống "". 
+            - TUYỆT ĐỐI KHÔNG sử dụng giá trị null hoặc chuỗi "null".
 Chỉ trả về JSON hợp lệ, không chứa văn bản thừa.`
             },
             {
