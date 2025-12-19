@@ -86,6 +86,7 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
       return numStr || value;
     }
 
+
     // Năm cấp: chỉ lấy 1 chữ số cuối cùng
     if (element.key === 'issueYear') {
       const yearStr = value.trim();
