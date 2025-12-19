@@ -35,6 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 QUY TẮC QUAN TRỌNG: 
             - Nếu bất kỳ thông tin nào không tìm thấy, không đọc được hoặc không có trong tài liệu, hãy để giá trị là chuỗi trống "". 
             - TUYỆT ĐỐI KHÔNG sử dụng giá trị null hoặc chuỗi "null".
+            - Nếu không lấy được link từ file của người dùng, mặc định link là "https://tracuu.vass.com.vn/a/[SERI]"
 Chỉ trả về JSON hợp lệ, không chứa văn bản thừa.`
             },
             {
