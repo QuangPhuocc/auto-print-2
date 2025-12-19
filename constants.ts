@@ -7,7 +7,7 @@ export const DEFAULT_ELEMENTS: PrintableElement[] = [
   { id: '3', key: 'address', label: 'Địa chỉ', x: 536, y: 241, fontSize: 13, fontWeight: 'bold', isVisible: true },
   { id: '4', key: 'licensePlate', label: 'Biển số xe', x: 622, y: 280, fontSize: 22, fontWeight: 'bold', isVisible: true },
   { id: '5', key: 'chassisNumber', label: 'Số khung', x: 556, y: 314, fontSize: 14, fontWeight: 'bold', isVisible: true },
-  { id: '6', key: 'engineNumber', label: 'Số máy', x: 546, y: 309, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '6', key: 'engineNumber', label: 'Số máy', x: 546, y: 339, fontSize: 14, fontWeight: 'bold', isVisible: true },
   { id: '7', key: 'vehicleType', label: 'Loại xe', x: 555, y: 359, fontSize: 14, fontWeight: 'bold', isVisible: true },
   { id: '8', key: 'seats', label: 'Số chỗ (TNDS)', x: 607, y: 411, fontSize: 14, fontWeight: 'bold', isVisible: true },
   { id: '9', key: 'weight', label: 'Trọng tải', x: 555, y: 384, fontSize: 14, fontWeight: 'bold', isVisible: true },
