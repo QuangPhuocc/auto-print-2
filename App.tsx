@@ -64,7 +64,13 @@ const App: React.FC = () => {
       setIsLoading(false);
     }
   };
-
+  const normalize = (v?: string | null) => {
+    if (!v) return '';
+    const s = String(v).trim();
+    if (s === '' || s === '_' || s.toLowerCase() === 'null') return '';
+    return s;
+  };
+  
   const updateElement = useCallback((id: string, updates: Partial<PrintableElement>) => {
     setElements(prev => prev.map(el => el.id === id ? { ...el, ...updates } : el));
   }, []);
@@ -162,15 +168,17 @@ const App: React.FC = () => {
    * hệ thống sẽ tự động tạo link tra cứu dựa trên Số seri.
    */
   const finalQrValue = useMemo(() => {
-    if (data.qrCode && data.qrCode.trim() !== '') {
-      return data.qrCode.trim();
+    const qr = normalize(data.qrCode);
+    if (qr) return qr;
+  
+    const serial = normalize(data.serialNumber);
+    if (serial) {
+      return `https://tracuu.vass.com.vn/a/${serial}`;
     }
-    if (data.serialNumber && data.serialNumber.trim() !== '') {
-      // Đảm bảo có path /a/ ở giữa host và seri
-      return `https://tracuu.vass.com.vn/a/${data.serialNumber.trim()}`;
-    }
+  
     return '';
   }, [data.qrCode, data.serialNumber]);
+  
   
   const renderInput = (key: keyof InsuranceData, placeholder = "...", customLabel?: string) => (
     <div className="flex flex-col space-y-1 w-full">
@@ -509,7 +517,9 @@ const App: React.FC = () => {
                 {elements.map((el) => {
                   let value = '';
                   const isAccidentField = ['accidentSeats', 'accidentAmount', 'accidentFee'].includes(el.key as string);
-                  const accidentFeeNum = parseFloat(data.accidentFee.replace(/[^0-9.-]+/g,""));
+                  const accidentFeeNum = parseFloat(
+                    (data.accidentFee || '').replace(/[^0-9.-]+/g,"")
+                  );
                   const hasNoAccidentInsurance = isNaN(accidentFeeNum) || accidentFeeNum === 0 || data.accidentFee === '' || data.accidentFee === '0';
 
                   if (el.isCustom) {
