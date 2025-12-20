@@ -219,8 +219,8 @@ const App: React.FC = () => {
               <FileText size={24} />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-800 leading-tight">Auto Print by LEPS - v20.12.17</h1>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Webapp in thẻ điện tử VASS có QR CODE nhanh</p>
+              <h1 className="text-lg font-bold text-gray-800 leading-tight">Webapp in thẻ điện tử VASS có QR CODE nhanh</h1>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Auto Print by LEPS - v20.12.17</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
