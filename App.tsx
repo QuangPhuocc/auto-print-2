@@ -50,8 +50,18 @@ const App: React.FC = () => {
         const base64 = (event.target?.result as string).split(',')[1];
         try {
           const result = await extractInsuranceData(base64, file.type);
-          result.vehicleType = applyVehicleTypeLogic(result.weight);
-          setData(result);
+result.vehicleType = applyVehicleTypeLogic(result.weight);
+
+// ✅ QR CODE LINK là NGOẠI LỆ
+const qr = (result.qrCode || '').trim();
+const serial = (result.serialNumber || '').trim();
+
+if (!qr && serial) {
+  result.qrCode = `https://tracuu.vass.com.vn/a/${serial}`;
+}
+
+setData(result);
+
         } catch (err: any) {
           setError(err.message || "Không thể trích xuất dữ liệu");
         } finally {
@@ -220,7 +230,7 @@ const App: React.FC = () => {
             </div>
             <div>
               <h1 className="text-lg font-bold text-gray-800 leading-tight">Webapp in thẻ điện tử VASS có QR CODE nhanh</h1>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Auto Print by LEPS - v20.12.17</p>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Auto Print by LEPS - v20.12.18</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
