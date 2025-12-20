@@ -21,6 +21,7 @@ import { InsuranceData, PrintableElement, TabType } from './types';
 import { DEFAULT_ELEMENTS, EMPTY_INSURANCE, LABEL_MAP } from './constants';
 import { extractInsuranceData } from './services/geminiService';
 import { DraggableItem } from './components/DraggableItem';
+import { track } from "./track";
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('list');
