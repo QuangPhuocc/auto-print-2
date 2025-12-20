@@ -23,6 +23,15 @@ import { extractInsuranceData } from './services/geminiService';
 import { DraggableItem } from './components/DraggableItem';
 import { track } from "./track";
 
+const todayKey = () => new Date().toISOString().slice(0, 10);
+
+const increaseDailyCounter = (key: "upload" | "print" | "page_view") => {
+  const today = todayKey();
+  const storageKey = `auto_print_${key}_${today}`;
+  const current = Number(localStorage.getItem(storageKey) || 0);
+  localStorage.setItem(storageKey, String(current + 1));
+};
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('list');
   const [data, setData] = useState<InsuranceData>(EMPTY_INSURANCE);
@@ -32,13 +41,30 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isEditingLayout, setIsEditingLayout] = useState(false);
   
-  const containerRef = useRef<HTMLDivElement>(null);
+useEffect(() => {
+  track("page_view", {
+    page: "auto_print_home",
+    domain: window.location.hostname,
+  });
+  increaseDailyCounter("page_view");
+}, []);
 
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    track("page_view", {
+      page: "auto_print_home",
+      domain: window.location.hostname,
+    });
+  }, []);
   const applyVehicleTypeLogic = (weightValue: string): string => {
     return weightValue && weightValue.trim() !== '' ? 'Xe tải' : 'Xe ô tô con';
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    track("upload_file", {
+      file_type: e.target.files?.[0]?.type || "unknown",
+    });
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -158,6 +184,11 @@ setData(result);
   }, [isEditingLayout, selectedIds, elements]);
 
   const handlePrint = () => {
+    track("print_insurance", {
+      has_qr: !!finalQrValue,
+      serial: data.serialNumber || "_",
+    });
+  
     window.print();
   };
 
