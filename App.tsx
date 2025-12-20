@@ -211,19 +211,19 @@ const App: React.FC = () => {
               <FileText size={24} />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-800 leading-tight">In Bảo Hiểm Tự Động</h1>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Hệ thống v4.5 • AI Extractor</p>
+              <h1 className="text-lg font-bold text-gray-800 leading-tight">Auto Print by LEPS - v20.12.17</h1>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Webapp in thẻ điện tử VASS có QR CODE nhanh</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
             <label className="flex items-center space-x-2 px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl cursor-pointer transition-all text-sm font-bold border border-emerald-100">
               <Upload size={18} />
-              <span>Tải tài liệu</span>
+              <span>UPLOAD file bảo hiểm ở đây</span>
               <input type="file" className="hidden" accept="application/pdf,image/*" onChange={handleFileUpload} />
             </label>
             <button onClick={handlePrint} className="flex items-center space-x-2 px-5 py-2 bg-gray-800 text-white hover:bg-gray-900 rounded-xl transition-all text-sm font-bold shadow-lg shadow-gray-200 active:scale-95">
               <Printer size={18} />
-              <span>In A4 Ngang</span>
+              <span>In thẻ</span>
             </button>
           </div>
         </div>
@@ -232,8 +232,8 @@ const App: React.FC = () => {
       <nav className="no-print bg-white border-b shrink-0 px-6">
         <div className="flex space-x-8">
           {[
-            { id: 'list', label: 'Trích xuất', icon: <List size={18} /> },
-            { id: 'print', label: 'Bố cục bản in', icon: <Layout size={18} /> }
+            { id: 'list', label: 'Thông tin bảo hiểm', icon: <List size={18} /> },
+            { id: 'print', label: 'Điều chỉnh bản in', icon: <Layout size={18} /> }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -266,7 +266,7 @@ const App: React.FC = () => {
               <div className="flex items-center justify-between mb-8 pb-4 border-b">
                 <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-3">
                   <Edit3 size={24} className="text-emerald-600" />
-                  <span>Sửa thông tin</span>
+                  <span>UPLOAD file bảo hiểm điện tử cần in và dán link QR CODE nếu có</span>
                 </h3>
                 <button onClick={() => setData(EMPTY_INSURANCE)} className="px-4 py-2 text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-colors uppercase">Làm mới</button>
               </div>
@@ -353,7 +353,7 @@ const App: React.FC = () => {
                     }`}
                   >
                     <Layout size={16} />
-                    <span>{isEditingLayout ? 'Lưu vị trí' : 'Kéo thả'}</span>
+                    <span>{isEditingLayout ? 'Lưu vị trí' : 'Điều chỉnh vị trí'}</span>
                   </button>
                   <button 
                     onClick={addCustomElement}
@@ -486,7 +486,7 @@ const App: React.FC = () => {
                 </div>
               </div>
               <div className="p-4 border-t">
-                <button onClick={resetLayout} className="w-full py-3 text-[10px] font-bold text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 border-2 border-dashed border-gray-100 rounded-2xl transition-all uppercase tracking-widest">Khôi phục mặc định</button>
+                <button onClick={resetLayout} className="w-full py-3 text-[10px] font-bold text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 border-2 border-dashed border-gray-100 rounded-2xl transition-all uppercase tracking-widest">Khôi phục vị trí mặc định</button>
               </div>
             </div>
             
