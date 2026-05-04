@@ -447,22 +447,20 @@ setData(result);
                         </label>
                         <div className="flex items-center gap-3">
                            <input 
-                             type="range" 
-                             min="8" max="250" 
+                             type="number" 
+                             min="8" max="500" 
                              value={selectedElements[0].key === 'qrCode' ? (selectedElements[0].size || 110) : selectedElements[0].fontSize}
                              onChange={(e) => {
-                               const val = parseInt(e.target.value);
+                              const val = parseInt(e.target.value) || 0;
                                selectedIds.forEach(id => {
                                  const el = elements.find(e => e.id === id);
                                  if (el?.key === 'qrCode') updateElement(id, { size: val });
                                  else updateElement(id, { fontSize: val });
                                });
                              }}
-                             className="flex-1 accent-emerald-600 h-1.5 bg-gray-200 rounded-lg cursor-pointer"
+                             className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold focus:ring-2 focus:ring-emerald-500 outline-none"
                            />
-                           <span className="text-xs font-mono font-bold text-emerald-600 w-8 text-right">
-                             {selectedElements[0].key === 'qrCode' ? (selectedElements[0].size || 110) : selectedElements[0].fontSize}
-                           </span>
+                           
                         </div>
                       </div>
                       
@@ -574,6 +572,9 @@ setData(result);
                     value = 'x';
                   } else {
                     value = (data[el.key as keyof InsuranceData] || '');
+                    if (['startYear', 'endYear', 'issueYear'].includes(el.key as string) && value) {
+                      value = value.toString().slice(-1);
+                    }
                   }
 
                   return (
@@ -611,6 +612,9 @@ setData(result);
                     value = 'x';
                   } else {
                     value = (data[el.key as keyof InsuranceData] || '');
+                    if (['startYear', 'endYear', 'issueYear'].includes(el.key as string) && value) {
+                      value = value.toString().slice(-1);
+                    }
                   }
 
                   return (

@@ -17,14 +17,14 @@ export const DEFAULT_ELEMENTS: PrintableElement[] = [
   { id: '10m', key: 'startMinute', label: 'Phút BĐ', x: 899, y: 214, fontSize: 14, fontWeight: 'bold', isVisible: true },
   { id: '11d', key: 'startDay', label: 'Ngày BĐ', x: 945, y: 214, fontSize: 14, fontWeight: 'bold', isVisible: true },
   { id: '11mo', key: 'startMonth', label: 'Tháng BĐ', x: 1000, y: 214, fontSize: 14, fontWeight: 'bold', isVisible: true },
-  { id: '11y', key: 'startYear', label: 'Năm BĐ', x: 1068, y: 214, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '11y', key: 'startYear', label: 'Năm BĐ', x: 1073, y: 214, fontSize: 14, fontWeight: 'bold', isVisible: true },
   
   // Thời hạn bảo hiểm Kết thúc
   { id: '12h', key: 'endHour', label: 'Giờ KT', x: 852, y: 238, fontSize: 14, fontWeight: 'bold', isVisible: true },
   { id: '12m', key: 'endMinute', label: 'Phút KT', x: 899, y: 238, fontSize: 14, fontWeight: 'bold', isVisible: true },
   { id: '13d', key: 'endDay', label: 'Ngày KT', x: 945, y: 238, fontSize: 14, fontWeight: 'bold', isVisible: true },
   { id: '13mo', key: 'endMonth', label: 'Tháng KT', x: 1000, y: 238, fontSize: 14, fontWeight: 'bold', isVisible: true },
-  { id: '13y', key: 'endYear', label: 'Năm KT', x: 1068, y: 238, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '13y', key: 'endYear', label: 'Năm KT', x: 1073, y: 238, fontSize: 14, fontWeight: 'bold', isVisible: true },
 
   // Phí bảo hiểm TNDS (Có VAT)
   { id: '14', key: 'fee', label: 'Phí TNDS (Tổng)', x: 988, y: 302, fontSize: 10, fontWeight: 'bold', isVisible: true },
@@ -37,7 +37,7 @@ export const DEFAULT_ELEMENTS: PrintableElement[] = [
   // Ngày cấp
   { id: 'issue_d', key: 'issueDay', label: 'Ngày cấp', x: 973, y: 434, fontSize: 13, fontWeight: 'bold', isVisible: true },
   { id: 'issue_m', key: 'issueMonth', label: 'Tháng cấp', x: 1020, y: 434, fontSize: 13, fontWeight: 'bold', isVisible: true },
-  { id: 'issue_y', key: 'issueYear', label: 'Năm cấp', x: 1086, y: 434, fontSize: 13, fontWeight: 'bold', isVisible: true },
+  { id: 'issue_y', key: 'issueYear', label: 'Năm cấp', x: 1091, y: 434, fontSize: 13, fontWeight: 'bold', isVisible: true },
 
   // Bảo hiểm tai nạn
   { id: '16', key: 'accidentSeats', label: 'Số chỗ TN', x: 325, y: 293, fontSize: 14, fontWeight: 'bold', isVisible: true },
