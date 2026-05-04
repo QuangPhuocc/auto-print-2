@@ -1,5 +1,6 @@
 {
-  "name": "Copy of Auto Print",
+  "name": "ROOT: Auto Print",
   "description": "An advanced tool to extract data from car insurance PDFs, manage details, and create customizable A4 print layouts with drag-and-drop functionality.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": []
 }

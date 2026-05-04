@@ -26,7 +26,6 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
   const dragRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number } | null>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!isEditing) return;
     onSelect(element.id, e.shiftKey || e.ctrlKey || e.metaKey);
     setIsDragging(true);
     dragRef.current = {
@@ -86,7 +85,6 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
       return numStr || value;
     }
 
-
     // Năm cấp: chỉ lấy 1 chữ số cuối cùng
     if (element.key === 'issueYear') {
       const yearStr = value.trim();
@@ -116,7 +114,8 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
         left: `${element.x}px`,
         top: `${element.y}px`,
         fontSize: isStrikeLine ? '0' : `${element.fontSize}px`,
-        fontWeight: 'bold', // Luôn in đậm theo yêu cầu
+        fontWeight: 'bold',
+        fontFamily: element.fontFamily || 'Inter, sans-serif',
         cursor: isEditing ? 'move' : 'default',
         userSelect: 'none',
         zIndex: isDragging ? 50 : 10,

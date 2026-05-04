@@ -43,7 +43,6 @@ export const DEFAULT_ELEMENTS: PrintableElement[] = [
   { id: '16', key: 'accidentSeats', label: 'Số chỗ TN', x: 325, y: 293, fontSize: 14, fontWeight: 'bold', isVisible: true },
   { id: '17', key: 'accidentAmount', label: 'Mức TN (Triệu)', x: 281, y: 325, fontSize: 14, fontWeight: 'bold', isVisible: true },
   { id: '18', key: 'accidentFee', label: 'Phí TN', x: 294, y: 359, fontSize: 14, fontWeight: 'bold', isVisible: true },
-  
 
   { id: '20', key: 'qrCode', label: 'Mã QR', x: 324, y: 540, fontSize: 0, size: 80, fontWeight: 'bold', isVisible: true },
 ];
