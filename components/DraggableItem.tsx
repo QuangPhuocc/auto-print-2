@@ -166,8 +166,8 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
         </div>
       ) : element.key === 'qrCode' ? (
         value ? (
-          <div className={`bg-white p-2 inline-block shadow-sm border ${isSelected ? 'border-emerald-500' : 'border-gray-100'}`}>
-             <QRCodeSVG value={value} size={element.size || 80} level="H" includeMargin={true} />
+          <div className={`inline-block ${isSelected && isEditing ? 'ring-2 ring-emerald-500 ring-offset-2' : ''}`}>
+             <QRCodeSVG value={value} size={element.size || 80} level="H" includeMargin={false} />
           </div>
         ) : (
           isEditing && (

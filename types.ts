@@ -11,6 +11,8 @@ export interface InsuranceData {
   weight: string;
   seats: string;
   purpose: string;
+  cccdMst: string;
+  phone: string;
   // Thời hạn bảo hiểm
   startHour: string;
   startMinute: string;
@@ -48,4 +50,4 @@ export interface PrintableElement {
   content?: string;
 }
 
-export type TabType = 'list' | 'print';
+export type TabType = 'list' | 'print_new' | 'print_old' | 'print_vass_red' | 'print_cathay';

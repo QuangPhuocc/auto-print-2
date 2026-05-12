@@ -22,18 +22,101 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
-  Eye
+  Eye,
+  Download
 } from 'lucide-react';
 import { InsuranceData, PrintableElement, TabType } from './types';
-import { DEFAULT_ELEMENTS, EMPTY_INSURANCE, LABEL_MAP } from './constants';
+import { DEFAULT_ELEMENTS_NEW, DEFAULT_ELEMENTS_OLD, DEFAULT_ELEMENTS_VASS_RED, DEFAULT_ELEMENTS_CATHAY, EMPTY_INSURANCE, LABEL_MAP } from './constants';
 import { extractInsuranceData } from './services/geminiService';
 import { DraggableItem } from './components/DraggableItem';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('list');
   const [data, setData] = useState<InsuranceData>(EMPTY_INSURANCE);
-  const [elements, setElements] = useState<PrintableElement[]>(DEFAULT_ELEMENTS);
+  const [layouts, setLayouts] = useState<Record<string, PrintableElement[]>>(() => {
+    const defaultLayouts = { 
+      print_new: DEFAULT_ELEMENTS_NEW, 
+      print_old: DEFAULT_ELEMENTS_OLD,
+      print_vass_red: DEFAULT_ELEMENTS_VASS_RED,
+      print_cathay: DEFAULT_ELEMENTS_CATHAY
+    };
+    try {
+      const saved = localStorage.getItem('insurance_print_layouts');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const merged: Record<string, PrintableElement[]> = { 
+          print_new: [], 
+          print_old: [],
+          print_vass_red: [],
+          print_cathay: []
+        };
+        
+        const processLayout = (defaults: PrintableElement[], savedItems: PrintableElement[]) => {
+          if (!savedItems || !Array.isArray(savedItems)) return defaults;
+          const result = defaults.map(def => {
+            const found = savedItems.find((s: PrintableElement) => s.id === def.id && !s.isCustom);
+            return found ? { 
+              ...def, 
+              x: found.x, 
+              y: found.y, 
+              fontSize: found.fontSize ?? def.fontSize, 
+              fontFamily: found.fontFamily ?? def.fontFamily,
+              fontWeight: found.fontWeight ?? def.fontWeight,
+              color: found.color ?? def.color,
+              isVisible: found.isVisible ?? def.isVisible, 
+              size: found.size ?? def.size 
+            } : def;
+          });
+          const customElements = savedItems.filter((s: PrintableElement) => s.isCustom);
+          return [...result, ...customElements];
+        };
+
+        merged.print_new = processLayout(DEFAULT_ELEMENTS_NEW, parsed.print_new);
+        merged.print_old = processLayout(DEFAULT_ELEMENTS_OLD, parsed.print_old);
+        merged.print_vass_red = processLayout(DEFAULT_ELEMENTS_VASS_RED, parsed.print_vass_red);
+        merged.print_cathay = processLayout(DEFAULT_ELEMENTS_CATHAY, parsed.print_cathay);
+        return merged;
+      }
+    } catch (e) {
+      console.error('Failed to load layouts:', e);
+    }
+    return defaultLayouts;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('insurance_print_layouts', JSON.stringify(layouts));
+    } catch (e) {
+      console.error('Failed to save layouts:', e);
+    }
+  }, [layouts]);
+  
+  const getDefaultForTab = (tabId: string) => {
+    switch (tabId) {
+      case 'print_new': return DEFAULT_ELEMENTS_NEW;
+      case 'print_old': return DEFAULT_ELEMENTS_OLD;
+      case 'print_vass_red': return DEFAULT_ELEMENTS_VASS_RED;
+      case 'print_cathay': return DEFAULT_ELEMENTS_CATHAY;
+      default: return DEFAULT_ELEMENTS_NEW;
+    }
+  };
+
+  const activeLayoutKey = activeTab === 'list' ? 'print_new' : activeTab;
+  const elements = layouts[activeLayoutKey] || getDefaultForTab(activeLayoutKey);
+
+  const setElements = useCallback((action: React.SetStateAction<PrintableElement[]>) => {
+    setLayouts(prev => ({
+      ...prev,
+      [activeLayoutKey]: typeof action === 'function' ? action(prev[activeLayoutKey] || getDefaultForTab(activeLayoutKey)) : action
+    }));
+  }, [activeLayoutKey]);
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [activeTab]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState('');
@@ -110,7 +193,7 @@ const App: React.FC = () => {
 
   const updateElement = useCallback((id: string, updates: Partial<PrintableElement>) => {
     setElements(prev => prev.map(el => el.id === id ? { ...el, ...updates } : el));
-  }, []);
+  }, [setElements]);
 
   const deleteElement = (id: string) => {
     setElements(prev => prev.filter(el => el.id !== id));
@@ -198,8 +281,27 @@ const App: React.FC = () => {
   };
 
   const resetLayout = () => {
-    setElements(DEFAULT_ELEMENTS);
+    setElements(getDefaultForTab(activeLayoutKey));
     setSelectedIds([]);
+  };
+
+  const exportLayout = () => {
+    const lines = elements.map(el => {
+      let text = `Nhãn: ${el.label}\n`;
+      text += `Tọa độ: X: ${el.x}, Y: ${el.y}\n`;
+      text += `Cỡ chữ: ${el.fontSize}px\n`;
+      text += `Font chữ: ${el.fontFamily || 'Inter'}\n`;
+      if (el.key === 'qrCode') text += `Kích cỡ QR: ${el.size || 0}px\n`;
+      text += `Trạng thái: ${el.isVisible ? 'Hiển thị' : 'Ẩn'}`;
+      return text;
+    });
+    const blob = new Blob([lines.join('\n\n--------------------------\n\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `layout_${activeTab}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   /**
@@ -278,7 +380,10 @@ const App: React.FC = () => {
         <div className="flex space-x-6">
           {[
             { id: 'list', label: 'Thông tin bảo hiểm', icon: <List size={18} /> },
-            { id: 'print', label: 'Điều chỉnh bản in', icon: <Layout size={18} /> }
+            { id: 'print_new', label: 'ĐT VASS mới', icon: <Layout size={18} /> },
+            { id: 'print_old', label: 'ĐT VASS cũ', icon: <Layout size={18} /> },
+            { id: 'print_vass_red', label: 'VASS SERI ĐỎ', icon: <Layout size={18} /> },
+            { id: 'print_cathay', label: 'CATHAY', icon: <Layout size={18} /> }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -331,6 +436,10 @@ const App: React.FC = () => {
                   {renderInput('licensePlate')}
                 </div>
                 <div className="w-full">{renderInput('ownerName')}</div>
+                <div className="flex gap-4">
+                  {renderInput('cccdMst')}
+                  {renderInput('phone')}
+                </div>
                 <div className="w-full">{renderInput('address')}</div>
                 <div className="flex gap-4">
                   {renderInput('chassisNumber')}
@@ -389,7 +498,7 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <div className={`flex-1 overflow-hidden flex no-print ${activeTab === 'print' ? 'flex' : 'hidden'}`}>
+          <div className={`flex-1 overflow-hidden flex no-print ${activeTab !== 'list' ? 'flex' : 'hidden'}`}>
             <div className="w-[360px] shrink-0 bg-white border-r flex flex-col z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
               <div className="flex-1 overflow-y-auto w-full custom-scrollbar bg-gray-50">
                 <div className="p-5 space-y-6">
@@ -413,8 +522,8 @@ const App: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-bold text-gray-600">Cỡ chữ chung</span>
                         <div className="flex bg-gray-100 p-0.5 rounded-lg gap-0.5">
-                          <button onClick={() => setElements(prev => prev.map(el => (selectedIds.length === 0 || selectedIds.includes(el.id)) && el.key !== 'qrCode' ? { ...el, fontSize: Math.max(8, el.fontSize - 1) } : el))} className="min-w-[28px] px-2 py-1 bg-white rounded shadow-sm font-bold text-sm leading-none hover:text-emerald-600 transition-colors">-</button>
-                          <button onClick={() => setElements(prev => prev.map(el => (selectedIds.length === 0 || selectedIds.includes(el.id)) && el.key !== 'qrCode' ? { ...el, fontSize: Math.max(8, el.fontSize + 1) } : el))} className="min-w-[28px] px-2 py-1 bg-white rounded shadow-sm font-bold text-sm leading-none hover:text-emerald-600 transition-colors">+</button>
+                          <button onClick={() => setElements(prev => prev.map(el => (selectedIds.length === 0 || selectedIds.includes(el.id)) ? { ...el, fontSize: el.key !== 'qrCode' ? Math.max(8, el.fontSize - 1) : el.fontSize, size: el.key === 'qrCode' ? Math.max(8, (el.size || 80) - 1) : el.size } : el))} className="min-w-[28px] px-2 py-1 bg-white rounded shadow-sm font-bold text-sm leading-none hover:text-emerald-600 transition-colors">-</button>
+                          <button onClick={() => setElements(prev => prev.map(el => (selectedIds.length === 0 || selectedIds.includes(el.id)) ? { ...el, fontSize: el.key !== 'qrCode' ? Math.max(8, el.fontSize + 1) : el.fontSize, size: el.key === 'qrCode' ? Math.max(8, (el.size || 80) + 1) : el.size } : el))} className="min-w-[28px] px-2 py-1 bg-white rounded shadow-sm font-bold text-sm leading-none hover:text-emerald-600 transition-colors">+</button>
                         </div>
                       </div>
 
@@ -477,14 +586,16 @@ const App: React.FC = () => {
                               <input 
                                 type="number" 
                                 min="8" max="500" 
-                                value={selectedElements.length > 0 ? (selectedElements[0].key === 'qrCode' ? (selectedElements[0].size || 110) : selectedElements[0].fontSize) : ''}
+                                value={selectedElements.length > 0 ? (selectedElements[0].key === 'qrCode' ? (selectedElements[0].size || 80) : selectedElements[0].fontSize) : ''}
                                 onChange={(e) => {
-                                  const val = parseInt(e.target.value) || 0;
-                                  selectedIds.forEach(id => {
-                                    const el = elements.find(e => e.id === id);
-                                    if (el?.key === 'qrCode') updateElement(id, { size: val });
-                                    else updateElement(id, { fontSize: val });
-                                  });
+                                  let val = parseInt(e.target.value);
+                                  if (isNaN(val)) val = 0;
+                                  setElements(prev => prev.map(el => {
+                                    if (selectedIds.includes(el.id)) {
+                                      return el.key === 'qrCode' ? { ...el, size: val } : { ...el, fontSize: val };
+                                    }
+                                    return el;
+                                  }));
                                 }}
                                 className="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                 placeholder={selectedElements.length > 0 ? "" : "--"}
@@ -561,8 +672,9 @@ const App: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="p-4 border-t bg-white shrink-0">
-                <button onClick={resetLayout} className="w-full py-3 text-xs font-bold text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 border-2 border-dashed border-gray-200 rounded-xl transition-all uppercase tracking-widest">Khôi phục mặc định</button>
+              <div className="p-4 border-t bg-white shrink-0 flex gap-3">
+                <button onClick={resetLayout} className="flex-1 py-3 text-[10px] font-bold text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 border border-gray-200 rounded-xl transition-all uppercase tracking-widest text-center shadow-sm">Khôi phục</button>
+                <button onClick={exportLayout} className="flex-1 flex items-center justify-center gap-1 py-3 text-[10px] font-bold text-white bg-gray-800 hover:bg-gray-900 rounded-xl transition-all uppercase tracking-widest shadow-lg shadow-gray-200"><Download size={14} /> Xuất Layout</button>
               </div>
             </div>
             
@@ -598,9 +710,6 @@ const App: React.FC = () => {
                     value = 'x';
                   } else {
                     value = (data[el.key as keyof InsuranceData] || '');
-                    if (['startYear', 'endYear', 'issueYear'].includes(el.key as string) && value) {
-                      value = value.toString().slice(-1);
-                    }
                   }
 
                   return (
@@ -638,9 +747,6 @@ const App: React.FC = () => {
                     value = 'x';
                   } else {
                     value = (data[el.key as keyof InsuranceData] || '');
-                    if (['startYear', 'endYear', 'issueYear'].includes(el.key as string) && value) {
-                      value = value.toString().slice(-1);
-                    }
                   }
 
                   return (

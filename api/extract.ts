@@ -45,7 +45,7 @@ export default async function handler(req: any, res: any) {
             2. Phí TNDS (fee): TRÍCH XUẤT TỔNG PHÍ CUỐI CÙNG (đã bao gồm thuế GTGT/VAT 10%). Tìm giá trị lớn nhất trong phần phí TNDS hoặc dòng ghi "Tổng cộng tiền phí".
             3. Ngày cấp (Issue Date): Trích xuất ngày, tháng, năm cấp bảo hiểm (issueDay, issueMonth, issueYear).
             4. Tai nạn lái phụ xe: accidentSeats, accidentAmount, accidentFee.
-            5. Xe: serialNumber, ownerName, address, licensePlate, chassisNumber, engineNumber, vehicleType, weight, seats, purpose.
+            5. Xe: serialNumber, ownerName, cccdMst (Số CCCD hoặc MST nếu có), phone (Số điện thoại nếu có), address, licensePlate, chassisNumber, engineNumber, vehicleType, weight, seats, purpose.
             6. QR Code: Nội dung chuỗi QR.
             
             QUY TẮC QUAN TRỌNG: 
@@ -69,6 +69,7 @@ export default async function handler(req: any, res: any) {
             qrCode: { type: Type.STRING },
             serialNumber: { type: Type.STRING },
             ownerName: { type: Type.STRING },
+            cccdMst: { type: Type.STRING },
             address: { type: Type.STRING },
             licensePlate: { type: Type.STRING },
             chassisNumber: { type: Type.STRING },
