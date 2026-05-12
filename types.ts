@@ -50,4 +50,4 @@ export interface PrintableElement {
   content?: string;
 }
 
-export type TabType = 'list' | 'print_new' | 'print_old' | 'print_vass_red' | 'print_cathay';
+export type TabType = 'list' | 'print_new' | 'print_old' | 'print_vass_red' | 'print_cathay' | 'print_custom';

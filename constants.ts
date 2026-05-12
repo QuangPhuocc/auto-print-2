@@ -45,7 +45,7 @@ export const DEFAULT_ELEMENTS_OLD: PrintableElement[] = [
   { id: '17', key: 'accidentAmount', label: 'Mức TN (Triệu)', x: 281, y: 325, fontSize: 14, fontWeight: 'bold', isVisible: true },
   { id: '18', key: 'accidentFee', label: 'Phí TN', x: 294, y: 359, fontSize: 14, fontWeight: 'bold', isVisible: true },
 
-  { id: '20', key: 'qrCode', label: 'Mã QR', x: 324, y: 540, fontSize: 0, size: 80, fontWeight: 'bold', isVisible: true },
+  { id: '20', key: 'qrCode', label: 'Mã QR', x: 340, y: 540, fontSize: 0, size: 80, fontWeight: 'bold', isVisible: true },
 ];
 
 export const DEFAULT_ELEMENTS_NEW: PrintableElement[] = [
@@ -97,7 +97,44 @@ export const DEFAULT_ELEMENTS_NEW: PrintableElement[] = [
 ];
 
 export const DEFAULT_ELEMENTS_CATHAY: PrintableElement[] = [
-  ...DEFAULT_ELEMENTS_OLD
+  { id: '1', key: 'serialNumber', label: 'Số seri', x: 553, y: 189, fontSize: 15, fontWeight: 'bold', isVisible: false },
+  { id: '2', key: 'ownerName', label: 'Tên chủ xe', x: 529, y: 234, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '3', key: 'address', label: 'Địa chỉ', x: 528, y: 260, fontSize: 13, fontWeight: 'bold', isVisible: true },
+  { id: '3_phone', key: 'phone', label: 'Điện thoại', x: 562, y: 283, fontSize: 13, fontWeight: 'bold', isVisible: true },
+  { id: '4', key: 'licensePlate', label: 'Biển số xe', x: 602, y: 302, fontSize: 18, fontWeight: 'bold', isVisible: true },
+  { id: '5', key: 'chassisNumber', label: 'Số khung', x: 557, y: 332, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '6', key: 'engineNumber', label: 'Số máy', x: 548, y: 354, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '7', key: 'vehicleType', label: 'Loại xe', x: 539, y: 380, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '8', key: 'seats', label: 'Số chỗ (TNDS)', x: 587, y: 428, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '9', key: 'weight', label: 'Trọng tải', x: 575, y: 403, fontSize: 14, fontWeight: 'bold', isVisible: true },
+
+  { id: '10h', key: 'startHour', label: 'Giờ BĐ', x: 841, y: 195, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '10m', key: 'startMinute', label: 'Phút BĐ', x: 899, y: 214, fontSize: 14, fontWeight: 'bold', isVisible: false },
+  { id: '11d', key: 'startDay', label: 'Ngày BĐ', x: 929, y: 195, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '11mo', key: 'startMonth', label: 'Tháng BĐ', x: 992, y: 195, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '11y', key: 'startYear', label: 'Năm BĐ', x: 1071, y: 195, fontSize: 14, fontWeight: 'bold', isVisible: true },
+
+  { id: '12h', key: 'endHour', label: 'Giờ KT', x: 841, y: 219, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '12m', key: 'endMinute', label: 'Phút KT', x: 899, y: 238, fontSize: 14, fontWeight: 'bold', isVisible: false },
+  { id: '13d', key: 'endDay', label: 'Ngày KT', x: 929, y: 219, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '13mo', key: 'endMonth', label: 'Tháng KT', x: 992, y: 219, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '13y', key: 'endYear', label: 'Năm KT', x: 1071, y: 219, fontSize: 14, fontWeight: 'bold', isVisible: true },
+
+  { id: '14', key: 'fee', label: 'Phí TNDS (Tổng)', x: 1005, y: 285, fontSize: 12, fontWeight: 'bold', isVisible: true },
+  
+  { id: 'biz', key: 'isBusiness', label: 'Kinh doanh', x: 558, y: 471, fontSize: 16, fontWeight: 'bold', isVisible: true },
+  { id: 'nobiz', key: 'isNotBusiness', label: 'Không Kinh doanh', x: 746, y: 471, fontSize: 16, fontWeight: 'bold', isVisible: true },
+  { id: 'agent', key: 'isAgent', label: 'Đại lý', x: 947, y: 405, fontSize: 16, fontWeight: 'bold', isVisible: true },
+
+  { id: 'issue_d', key: 'issueDay', label: 'Ngày cấp', x: 957, y: 465, fontSize: 13, fontWeight: 'bold', isVisible: true },
+  { id: 'issue_m', key: 'issueMonth', label: 'Tháng cấp', x: 1009, y: 465, fontSize: 13, fontWeight: 'bold', isVisible: true },
+  { id: 'issue_y', key: 'issueYear', label: 'Năm cấp', x: 1075, y: 465, fontSize: 13, fontWeight: 'bold', isVisible: true },
+
+  { id: '16', key: 'accidentSeats', label: 'Số chỗ TN', x: 296, y: 514, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '17', key: 'accidentAmount', label: 'Mức TN (Triệu)', x: 280, y: 539, fontSize: 14, fontWeight: 'bold', isVisible: true },
+  { id: '18', key: 'accidentFee', label: 'Phí TN', x: 269, y: 567, fontSize: 14, fontWeight: 'bold', isVisible: true },
+
+  { id: '20', key: 'qrCode', label: 'Mã QR', x: 324, y: 540, fontSize: 0, size: 80, fontWeight: 'bold', isVisible: false },
 ];
 
 export const DEFAULT_ELEMENTS_VASS_RED: PrintableElement[] = [
@@ -144,7 +181,7 @@ export const DEFAULT_ELEMENTS_VASS_RED: PrintableElement[] = [
   { id: '17', key: 'accidentAmount', label: 'Mức TN (Triệu)', x: 281, y: 325, fontSize: 14, fontWeight: 'bold', isVisible: true },
   { id: '18', key: 'accidentFee', label: 'Phí TN', x: 294, y: 359, fontSize: 14, fontWeight: 'bold', isVisible: true },
 
-  { id: '20', key: 'qrCode', label: 'Mã QR', x: 324, y: 540, fontSize: 0, size: 80, fontWeight: 'bold', isVisible: true },
+  { id: '20', key: 'qrCode', label: 'Mã QR', x: 348, y: 529, fontSize: 0, size: 80, fontWeight: 'bold', isVisible: true },
 ];
 
 export const EMPTY_INSURANCE: InsuranceData = {

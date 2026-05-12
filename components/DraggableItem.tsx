@@ -11,6 +11,7 @@ interface DraggableItemProps {
   isEditing: boolean;
   isSelected: boolean;
   onSelect: (id: string, multi: boolean) => void;
+  dynamicLineHeight?: number | null;
 }
 
 export const DraggableItem: React.FC<DraggableItemProps> = ({ 
@@ -20,7 +21,8 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
   containerRef,
   isEditing,
   isSelected,
-  onSelect
+  onSelect,
+  dynamicLineHeight
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number } | null>(null);
@@ -122,11 +124,11 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
         backgroundColor: isDragging ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
         border: isEditing && !isStrikeLine ? (isSelected ? '2px solid #10b981' : '1px dashed #10b981') : 'none',
         padding: isEditing && !isStrikeLine ? '4px' : '0',
-        // Cho phép địa chỉ hoặc nhãn tùy chỉnh xuống dòng
-        whiteSpace: (element.key === 'address' || element.isCustom) ? 'normal' : 'nowrap',
-        maxWidth: (element.key === 'address' || element.isCustom) ? '400px' : 'none',
+        // Cho phép địa chỉ, tên chủ xe, hoặc nhãn tùy chỉnh xuống dòng
+        whiteSpace: (element.key === 'address' || element.key === 'ownerName' || element.isCustom) ? 'pre-wrap' : 'pre',
+        maxWidth: (element.key === 'address' || element.isCustom) ? '400px' : (element.key === 'ownerName') ? '350px' : 'none',
         boxShadow: isSelected && isEditing ? '0 0 10px rgba(16, 185, 129, 0.3)' : 'none',
-        lineHeight: '1.2'
+        lineHeight: dynamicLineHeight ? `${dynamicLineHeight}` : '1.2'
       }}
       onMouseDown={handleMouseDown}
       className="transition-all duration-150"

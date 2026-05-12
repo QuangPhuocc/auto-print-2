@@ -1,5 +1,6 @@
 
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import ReactGA from "react-ga4";
 import { 
   FileText, 
   Printer, 
@@ -23,7 +24,10 @@ import {
   ArrowLeft,
   ArrowRight,
   Eye,
-  Download
+  Download,
+  Star,
+  HelpCircle,
+  X
 } from 'lucide-react';
 import { InsuranceData, PrintableElement, TabType } from './types';
 import { DEFAULT_ELEMENTS_NEW, DEFAULT_ELEMENTS_OLD, DEFAULT_ELEMENTS_VASS_RED, DEFAULT_ELEMENTS_CATHAY, EMPTY_INSURANCE, LABEL_MAP } from './constants';
@@ -31,6 +35,14 @@ import { extractInsuranceData } from './services/geminiService';
 import { DraggableItem } from './components/DraggableItem';
 
 const App: React.FC = () => {
+  useEffect(() => {
+    ReactGA.initialize("G-B2TF391TH0");
+  
+    ReactGA.send({
+      hitType: "pageview",
+      page: window.location.pathname,
+    });
+  }, []);
   const [activeTab, setActiveTab] = useState<TabType>('list');
   const [data, setData] = useState<InsuranceData>(EMPTY_INSURANCE);
   const [layouts, setLayouts] = useState<Record<string, PrintableElement[]>>(() => {
@@ -38,7 +50,8 @@ const App: React.FC = () => {
       print_new: DEFAULT_ELEMENTS_NEW, 
       print_old: DEFAULT_ELEMENTS_OLD,
       print_vass_red: DEFAULT_ELEMENTS_VASS_RED,
-      print_cathay: DEFAULT_ELEMENTS_CATHAY
+      print_cathay: DEFAULT_ELEMENTS_CATHAY,
+      print_custom: DEFAULT_ELEMENTS_NEW
     };
     try {
       const saved = localStorage.getItem('insurance_print_layouts');
@@ -48,7 +61,8 @@ const App: React.FC = () => {
           print_new: [], 
           print_old: [],
           print_vass_red: [],
-          print_cathay: []
+          print_cathay: [],
+          print_custom: []
         };
         
         const processLayout = (defaults: PrintableElement[], savedItems: PrintableElement[]) => {
@@ -75,6 +89,7 @@ const App: React.FC = () => {
         merged.print_old = processLayout(DEFAULT_ELEMENTS_OLD, parsed.print_old);
         merged.print_vass_red = processLayout(DEFAULT_ELEMENTS_VASS_RED, parsed.print_vass_red);
         merged.print_cathay = processLayout(DEFAULT_ELEMENTS_CATHAY, parsed.print_cathay);
+        merged.print_custom = processLayout(DEFAULT_ELEMENTS_NEW, parsed.print_custom);
         return merged;
       }
     } catch (e) {
@@ -120,6 +135,8 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState('');
+  const [showGuidePopup, setShowGuidePopup] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -145,10 +162,7 @@ const App: React.FC = () => {
     return sanitized;
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File) => {
     setIsLoading(true);
     setError(null);
 
@@ -162,6 +176,12 @@ const App: React.FC = () => {
           sanitized.vehicleType = applyVehicleTypeLogic(sanitized.weight);
           setData(sanitized);
         } catch (err: any) {
+
+          ReactGA.event({
+            category: "AI",
+            action: "Extract Failed",
+          });
+        
           setError(err.message || "Không thể trích xuất dữ liệu");
         } finally {
           setIsLoading(false);
@@ -171,6 +191,39 @@ const App: React.FC = () => {
     } catch (err) {
       setError("Lỗi khi đọc tệp tin.");
       setIsLoading(false);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+
+      ReactGA.event({
+        category: "Upload",
+        action: "Upload Insurance File",
+        label: file.type,
+      });
+    
+      processFile(file);
+    }
+    e.target.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (activeTab === 'list') setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (activeTab === 'list' && e.dataTransfer.files?.[0]) {
+      processFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -184,6 +237,10 @@ const App: React.FC = () => {
       const sanitized = sanitizeData(result);
       sanitized.vehicleType = applyVehicleTypeLogic(sanitized.weight);
       setData(sanitized);
+      ReactGA.event({
+        category: "AI",
+        action: "Extract Success",
+      });
     } catch (err: any) {
       setError(err.message || "Không thể trích xuất từ link này");
     } finally {
@@ -269,6 +326,14 @@ const App: React.FC = () => {
   }, [selectedIds, elements]);
 
   const handlePrint = () => {
+    if (activeTab === 'list') return;
+  
+    ReactGA.event({
+      category: "Print",
+      action: "Click Print Button",
+      label: activeTab,
+    });
+  
     window.print();
   };
 
@@ -304,6 +369,58 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const importLayout = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      const text = await file.text();
+      const blocks = text.split('--------------------------').map(b => b.trim()).filter(b => b.length > 0);
+      
+      const parsedElements: Partial<PrintableElement>[] = blocks.map(block => {
+        const lines = block.split('\n').map(l => l.trim());
+        const el: Partial<PrintableElement> = {};
+        lines.forEach(line => {
+          if (line.startsWith('Nhãn: ')) el.label = line.replace('Nhãn: ', '');
+          if (line.startsWith('Tọa độ: ')) {
+             const match = line.match(/X:\s*(-?\d+),\s*Y:\s*(-?\d+)/);
+             if (match) {
+                el.x = parseInt(match[1]);
+                el.y = parseInt(match[2]);
+             }
+          }
+          if (line.startsWith('Cỡ chữ: ')) el.fontSize = parseInt(line.replace('Cỡ chữ: ', '').replace('px', ''));
+          if (line.startsWith('Font chữ: ')) el.fontFamily = line.replace('Font chữ: ', '');
+          if (line.startsWith('Kích cỡ QR: ')) el.size = parseInt(line.replace('Kích cỡ QR: ', '').replace('px', ''));
+          if (line.startsWith('Trạng thái: ')) el.isVisible = line.replace('Trạng thái: ', '') === 'Hiển thị';
+        });
+        return el;
+      });
+
+      setElements(prev => {
+        return prev.map(current => {
+          const parsed = parsedElements.find(p => p.label === current.label);
+          if (parsed) {
+            return {
+              ...current,
+              x: parsed.x !== undefined ? parsed.x : current.x,
+              y: parsed.y !== undefined ? parsed.y : current.y,
+              fontSize: parsed.fontSize !== undefined ? parsed.fontSize : current.fontSize,
+              fontFamily: parsed.fontFamily !== undefined ? parsed.fontFamily : current.fontFamily,
+              size: parsed.size !== undefined ? parsed.size : current.size,
+              isVisible: parsed.isVisible !== undefined ? parsed.isVisible : current.isVisible,
+            };
+          }
+          return current;
+        });
+      });
+    } catch(err) {
+      console.error(err);
+      alert('File layout không hợp lệ');
+    }
+    e.target.value = '';
+  };
+
   /**
    * Logic: Nếu nội dung QR trích xuất trống, 
    * hệ thống sẽ tự động tạo link tra cứu dựa trên Số seri.
@@ -319,18 +436,31 @@ const App: React.FC = () => {
     return '';
   }, [data.qrCode, data.serialNumber]);
 
-  const renderInput = (key: keyof InsuranceData, placeholder = "...", customLabel?: string) => (
-    <div className="flex flex-col space-y-1 w-full">
-      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{customLabel || LABEL_MAP[key] || key}</label>
-      <input
-        type="text"
-        value={data[key] || ''}
-        onChange={(e) => handleDataChange(key, e.target.value)}
-        className={`w-full px-4 py-2 border border-gray-100 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm outline-none font-semibold ${key === 'qrCode' ? 'bg-emerald-50/50 border-emerald-100 italic text-emerald-700' : 'bg-gray-50/50'}`}
-        placeholder={placeholder}
-      />
-    </div>
-  );
+  const renderInput = (key: keyof InsuranceData, placeholder = "...", customLabel?: string) => {
+    const isMultiline = ['ownerName', 'address'].includes(key);
+    return (
+      <div className="flex flex-col space-y-1 w-full">
+        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{customLabel || LABEL_MAP[key] || key}</label>
+        {isMultiline ? (
+          <textarea
+            value={data[key] || ''}
+            onChange={(e) => handleDataChange(key, e.target.value)}
+            className={`w-full px-4 py-2 border border-gray-100 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm outline-none font-semibold resize-y min-h-[42px] max-h-32 ${key === 'qrCode' ? 'bg-emerald-50/50 border-emerald-100 italic text-emerald-700' : 'bg-gray-50/50'}`}
+            placeholder={placeholder}
+            rows={2}
+          />
+        ) : (
+          <input
+            type="text"
+            value={data[key] || ''}
+            onChange={(e) => handleDataChange(key, e.target.value)}
+            className={`w-full px-4 py-2 border border-gray-100 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm outline-none font-semibold ${key === 'qrCode' ? 'bg-emerald-50/50 border-emerald-100 italic text-emerald-700' : 'bg-gray-50/50'}`}
+            placeholder={placeholder}
+          />
+        )}
+      </div>
+    );
+  };
 
   const selectedElements = elements.filter(el => selectedIds.includes(el.id));
 
@@ -353,22 +483,39 @@ const App: React.FC = () => {
       <header className="no-print bg-white border-b shrink-0 z-50">
         <div className="max-w-full mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="bg-emerald-600 p-2.5 rounded-xl text-white shadow-sm">
-              <FileText size={28} />
+            <div className="bg-[#ff0000] p-2.5 rounded-xl text-[#ffea00] shadow-md relative group cursor-help" onClick={() => setShowGuidePopup(true)}>
+              <Star size={28} fill="currentColor" strokeWidth={2} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800 leading-tight">Webapp in thẻ điện tử VASS có QR CODE nhanh</h1>
-              <p className="text-[11px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">AUTO PRINT BY LEPS - V20.12.18</p>
+              <h1 className="text-xl font-bold text-gray-800 leading-tight">Chúc cả nhà in 1.000 thẻ mỗi ngày <span className="text-[#ff0000] text-2xl drop-shadow-sm">❤️</span></h1>
+              <p className="text-[11px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">AUTO PRINT BY <span className="text-[#ff0000]">LEPS</span> - <span className="text-green-600">v173.2026</span></p>
             </div>
           </div>
           
           <div className="flex items-center space-x-4">
-            <label className="flex items-center space-x-2 px-6 py-2.5 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 rounded-full cursor-pointer transition-all text-sm font-bold border border-emerald-100">
-              <Upload size={18} />
-              <span>UPLOAD file bảo hiểm ở đây</span>
+            <button 
+              onClick={() => setShowGuidePopup(true)} 
+              className="p-1 text-black bg-[#ffea00] border-[2.5px] border-black rounded-full hover:bg-yellow-300 transition-colors relative group shadow-sm flex items-center justify-center shrink-0"
+            >
+              <HelpCircle size={24} strokeWidth={2.5} />
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-800 text-white text-xs font-bold rounded shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                Hướng dẫn sử dụng
+              </div>
+            </button>
+            <label className="flex items-center space-x-2 px-6 py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-full cursor-pointer transition-all text-sm font-bold border border-blue-700 shadow-lg shadow-blue-600/20 relative">
+              <Upload size={18} strokeWidth={2.5} />
+              <span>UPLOAD file bảo hiểm điện tử ở đây</span>
               <input type="file" className="hidden" accept="application/pdf,image/*" onChange={handleFileUpload} />
             </label>
-            <button onClick={handlePrint} className="flex items-center space-x-2 px-6 py-2.5 bg-gray-800 text-white hover:bg-gray-900 rounded-full transition-all text-sm font-bold shadow-lg shadow-gray-200 active:scale-95 border border-gray-700">
+            <button 
+              onClick={handlePrint} 
+              disabled={activeTab === 'list'}
+              className={`flex items-center space-x-2 px-6 py-2.5 rounded-full transition-all text-sm font-bold shadow-lg shadow-gray-200 border ${
+                activeTab === 'list' 
+                  ? 'bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed shadow-none' 
+                  : 'bg-gray-800 text-white hover:bg-gray-900 active:scale-95 border-gray-700'
+              }`}
+            >
               <Printer size={18} />
               <span>In thẻ</span>
             </button>
@@ -383,7 +530,8 @@ const App: React.FC = () => {
             { id: 'print_new', label: 'ĐT VASS mới', icon: <Layout size={18} /> },
             { id: 'print_old', label: 'ĐT VASS cũ', icon: <Layout size={18} /> },
             { id: 'print_vass_red', label: 'VASS SERI ĐỎ', icon: <Layout size={18} /> },
-            { id: 'print_cathay', label: 'CATHAY', icon: <Layout size={18} /> }
+            { id: 'print_cathay', label: 'CATHAY', icon: <Layout size={18} /> },
+            { id: 'print_custom', label: 'TUỲ CHỈNH', icon: <Layout size={18} /> }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -400,6 +548,56 @@ const App: React.FC = () => {
       </nav>
 
       <main className="flex-1 overflow-hidden relative">
+        {showGuidePopup && (
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-[640px] w-full">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <HelpCircle size={24} className="text-emerald-600" />
+                  Hướng dẫn sử dụng
+                </h3>
+                <button onClick={() => setShowGuidePopup(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer ring-0 outline-none">
+                  <X size={20} className="text-gray-500" />
+                </button>
+              </div>
+              <div className="space-y-4 text-gray-600 leading-relaxed text-sm">
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0">1</div>
+                  <p className="pt-1">Tại tab <span className="font-bold text-gray-800">Thông tin bảo hiểm</span>: Kéo/tải file báo hiểm (PDF/Ảnh) vào, hoặc nhập thủ công vào form.</p>
+                </div>
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0">2</div>
+                  <p className="pt-1">Chuyển sang các tab <span className="font-bold text-gray-800">Loại thẻ</span> (VD: ĐT VASS mới, CATHAY, TUỲ CHỈNH...) trên thanh ngang để xem và tinh chỉnh giao diện thẻ trước khi in.</p>
+                </div>
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0">3</div>
+                  <p className="pt-1">Nhấn nút <span className="font-bold text-gray-800">In thẻ</span> ở góc phải màn hình để in.</p>
+                </div>
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0">4</div>
+                  <div className="pt-1">
+                    <p className="font-semibold text-gray-800">Tính năng khác:</p>
+                    <p className="font-bold text-red-500 mt-1 mb-2">App sẽ tự lưu vị trí chỉnh sửa các dòng gần nhất của bạn, nếu in lệch, bạn chỉ cần chỉnh sửa 1 lần. Nhấn Khôi phục sẽ đặt lại vị trí tương đối ban đầu.</p>
+                    <p className="font-semibold text-gray-800">Tại các tab Loại thẻ, bạn có thể tuỳ ý kéo thả, thêm hoặc chỉnh sửa các trường thông tin. Cột bên phải cung cấp tính năng Quản lý Layout:</p>
+                    <ul className="list-disc ml-5 mt-2 space-y-2">
+                      <li><span className="font-bold text-emerald-700">Khôi phục:</span> Đặt lại vị trí, nội dung, định dạng của thẻ về trạng thái mặc định ban đầu.</li>
+                      <li><span className="font-bold text-emerald-700">Xuất Layout:</span> Lưu bố cục thiết kế hiện tại trên thẻ thành một tệp tin (.txt) tải về máy của bạn để dùng cho các thẻ sau.</li>
+                      <li><span className="font-bold text-emerald-700">Nhập Layout:</span> Tải lên tệp cấu hình (.txt) mà bạn đã Xuất trước đó để tái sử dụng lại thiết kế bố cục nhanh chóng.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-8 flex justify-end">
+                <button 
+                  onClick={() => setShowGuidePopup(false)}
+                  className="px-6 py-2.5 bg-emerald-600 cursor-pointer text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors"
+                >
+                  Đã hiểu
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {isLoading && (
           <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center text-center">
             <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center border border-emerald-50 scale-110">
@@ -418,19 +616,32 @@ const App: React.FC = () => {
           </div>
         )}
 
-        <div className="h-full w-full flex flex-col">
+        <div 
+          className="h-full w-full flex flex-col"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {isDragging && (
+            <div className="absolute inset-0 bg-emerald-500/10 backdrop-blur-sm z-[200] border-4 border-emerald-500 border-dashed rounded-xl flex items-center justify-center pointer-events-none m-6">
+              <div className="bg-white px-8 py-4 rounded-full shadow-lg text-xl font-bold text-emerald-700 flex items-center gap-3">
+                <Upload size={24} />
+                Thả file bảo hiểm vào đây
+              </div>
+            </div>
+          )}
           <div className={`flex-1 overflow-y-auto p-6 no-print ${activeTab === 'list' ? 'block' : 'hidden'} custom-scrollbar`}>
-            <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 p-8 h-fit">
+            <div className={`max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border ${isDragging ? 'border-emerald-500 ring-4 ring-emerald-500/20' : 'border-gray-100'} p-8 h-fit transition-all duration-200`}>
               <div className="flex items-center justify-between mb-8 pb-4 border-b">
                 <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-3">
                   <Edit3 size={24} className="text-emerald-600" />
-                  <span>UPLOAD file bảo hiểm điện tử cần in và dán link QR CODE nếu có</span>
+                  <span>Tải file điện tử lên để app lấy thông tin hoặc tự nhập theo form dưới</span>
                 </h3>
                 <button onClick={() => { setData(EMPTY_INSURANCE); setPdfUrl(''); }} className="px-6 py-2.5 text-xs font-bold text-[#e15252] bg-[#fdf2f2] hover:bg-[#fae6e6] rounded-xl transition-colors uppercase">Làm mới</button>
               </div>
 
               <div className="flex flex-col space-y-5">
-                <div className="w-full">{renderInput('qrCode', 'Dữ liệu mã QR', 'QR CODE LINK')}</div>
+                <div className="w-full">{renderInput('qrCode', 'Dán link QR bảo hiểm điện tử nếu có.', 'QR CODE LINK')}</div>
                 <div className="flex gap-4">
                   {renderInput('serialNumber')}
                   {renderInput('licensePlate')}
@@ -672,9 +883,15 @@ const App: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="p-4 border-t bg-white shrink-0 flex gap-3">
-                <button onClick={resetLayout} className="flex-1 py-3 text-[10px] font-bold text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 border border-gray-200 rounded-xl transition-all uppercase tracking-widest text-center shadow-sm">Khôi phục</button>
-                <button onClick={exportLayout} className="flex-1 flex items-center justify-center gap-1 py-3 text-[10px] font-bold text-white bg-gray-800 hover:bg-gray-900 rounded-xl transition-all uppercase tracking-widest shadow-lg shadow-gray-200"><Download size={14} /> Xuất Layout</button>
+              <div className="p-4 border-t bg-white shrink-0 flex flex-col gap-3 group">
+                <div className="flex gap-2">
+                  <button onClick={resetLayout} className="flex-1 py-2 text-[10px] font-bold text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 border border-gray-200 rounded-xl transition-all uppercase tracking-widest text-center shadow-sm">Khôi phục</button>
+                  <label className="flex-1 flex items-center justify-center gap-1 py-2 text-[10px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all uppercase tracking-widest cursor-pointer shadow-sm">
+                    <Upload size={14} /> Nhập Layout
+                    <input type="file" className="hidden" accept=".txt" onChange={importLayout} />
+                  </label>
+                </div>
+                <button onClick={exportLayout} className="w-full flex items-center justify-center gap-1 py-3 text-[10px] font-bold text-white bg-gray-800 hover:bg-gray-900 rounded-xl transition-all uppercase tracking-widest shadow-lg shadow-gray-200"><Download size={14} /> Xuất Layout</button>
               </div>
             </div>
             
@@ -710,6 +927,9 @@ const App: React.FC = () => {
                     value = 'x';
                   } else {
                     value = (data[el.key as keyof InsuranceData] || '');
+                    if (['startYear', 'endYear', 'issueYear'].includes(el.key as string) && value) {
+                      value = activeLayoutKey === 'print_cathay' ? value.toString().slice(-2) : value.toString().slice(-1);
+                    }
                   }
 
                   return (
@@ -747,6 +967,9 @@ const App: React.FC = () => {
                     value = 'x';
                   } else {
                     value = (data[el.key as keyof InsuranceData] || '');
+                    if (['startYear', 'endYear', 'issueYear'].includes(el.key as string) && value) {
+                      value = activeLayoutKey === 'print_cathay' ? value.toString().slice(-2) : value.toString().slice(-1);
+                    }
                   }
 
                   return (
