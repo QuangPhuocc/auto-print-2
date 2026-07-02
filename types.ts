@@ -45,6 +45,7 @@ export interface PrintableElement {
   size?: number; // Dành cho mã QR hoặc các phần tử cần kích thước riêng
   fontWeight: string;
   fontFamily?: string;
+  color?: string;
   isVisible: boolean;
   isCustom?: boolean;
   content?: string;

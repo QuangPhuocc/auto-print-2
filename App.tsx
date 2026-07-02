@@ -146,6 +146,43 @@ const App: React.FC = () => {
     return weightValue && weightValue.trim() !== '' ? 'Xe tải' : 'Xe ô tô con';
   };
 
+  const formatLicensePlate = (val: string): string => {
+    if (!val) return '';
+    const trimmedUpper = val.trim().toUpperCase();
+    const cleaned = trimmedUpper.replace(/[-.\s]/g, '');
+
+    const standardPattern = /^(\d{2}[A-Z]{1,2})(\d+)$/;
+    const specialPattern = /^([A-Z]{2})(\d+)$/;
+
+    let prefix = '';
+    let numbers = '';
+
+    if (standardPattern.test(cleaned)) {
+      const match = cleaned.match(standardPattern);
+      if (match) {
+        prefix = match[1];
+        numbers = match[2];
+      }
+    } else if (specialPattern.test(cleaned)) {
+      const match = cleaned.match(specialPattern);
+      if (match) {
+        prefix = match[1];
+        numbers = match[2];
+      }
+    }
+
+    if (prefix && numbers) {
+      if (numbers.length === 5) {
+        return `${prefix}-${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+      } else {
+        return `${prefix}-${numbers}`;
+      }
+    }
+
+    return trimmedUpper;
+  };
+
+
   /**
    * Đảm bảo các giá trị nhận được từ AI không bao giờ là null hoặc chuỗi "null"
    */
@@ -173,6 +210,7 @@ const App: React.FC = () => {
         try {
           const result = await extractInsuranceData({ base64, mimeType: file.type });
           const sanitized = sanitizeData(result);
+          sanitized.licensePlate = formatLicensePlate(sanitized.licensePlate);
           sanitized.vehicleType = applyVehicleTypeLogic(sanitized.weight);
           setData(sanitized);
         } catch (err: any) {
@@ -235,6 +273,7 @@ const App: React.FC = () => {
     try {
       const result = await extractInsuranceData({ url: pdfUrl });
       const sanitized = sanitizeData(result);
+      sanitized.licensePlate = formatLicensePlate(sanitized.licensePlate);
       sanitized.vehicleType = applyVehicleTypeLogic(sanitized.weight);
       setData(sanitized);
       ReactGA.event({
@@ -273,7 +312,6 @@ const App: React.FC = () => {
     };
     setElements(prev => [...prev, newElement]);
     setSelectedIds([newId]);
-    setIsEditingLayout(true);
   };
 
   const handleSelect = useCallback((id: string, multi: boolean = false, toggle: boolean = false) => {
@@ -454,6 +492,11 @@ const App: React.FC = () => {
             type="text"
             value={data[key] || ''}
             onChange={(e) => handleDataChange(key, e.target.value)}
+            onBlur={(e) => {
+              if (key === 'licensePlate') {
+                handleDataChange('licensePlate', formatLicensePlate(e.target.value));
+              }
+            }}
             className={`w-full px-4 py-2 border border-gray-100 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-sm outline-none font-semibold ${key === 'qrCode' ? 'bg-emerald-50/50 border-emerald-100 italic text-emerald-700' : 'bg-gray-50/50'}`}
             placeholder={placeholder}
           />
