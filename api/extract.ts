@@ -1,43 +1,5 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Always initialize GoogleGenAI with a named parameter using process.env.API_KEY directly.
-// Helper to parse multiple comma-separated keys
-const getApiKeys = (): string[] => {
-  const keysStr = process.env.GEMINI_API_KEYS || process.env.API_KEY || process.env.GEMINI_API_KEY || "";
-  return keysStr
-    .split(",")
-    .map(k => k.trim())
-    .filter(k => k.length > 0 && k !== "PLACEHOLDER_API_KEY");
-};
-
-export default async function handler(req: any, res: any) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { fileBase64, mimeType, url } = req.body;
-  let finalBase64 = fileBase64;
-  let finalMimeType = mimeType;
-
-  try {
-    // Nếu người dùng gửi URL, server sẽ tự tải file về
-    if (url && !fileBase64) {
-      console.log("Fetching remote PDF:", url);
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Không thể tải file từ link cung cấp.");
-      
-      const arrayBuffer = await response.arrayBuffer();
-      
-      const bytes = new Uint8Array(arrayBuffer);
-      let binary = '';
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      finalBase64 = btoa(binary);
-import { GoogleGenAI, Type } from "@google/genai";
-
-// Always initialize GoogleGenAI with a named parameter using process.env.API_KEY directly.
 // Helper to parse multiple comma-separated keys
 const getApiKeys = (): string[] => {
   const keysStr = process.env.GEMINI_API_KEYS || process.env.API_KEY || process.env.GEMINI_API_KEY || "";
