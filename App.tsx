@@ -247,7 +247,7 @@ const App: React.FC = () => {
 
 
   /**
-   * Đảm bảo các giá trị nhận được từ AI không bao giờ là null hoặc chuỗi "null"
+   * Đảm bảo các giá trị nhận được từ máy chủ không bao giờ là null hoặc chuỗi "null"
    */
   const sanitizeData = (raw: any): InsuranceData => {
     const sanitized = { ...EMPTY_INSURANCE };
@@ -282,7 +282,7 @@ const App: React.FC = () => {
         } catch (err: any) {
 
           ReactGA.event({
-            category: "AI",
+            category: "Scan",
             action: "Extract Failed",
           });
         
@@ -347,7 +347,7 @@ const App: React.FC = () => {
       sanitized.vehicleType = applyVehicleTypeLogic(sanitized.weight);
       setData(sanitized);
       ReactGA.event({
-        category: "AI",
+        category: "Scan",
         action: "Extract Success",
       });
     } catch (err: any) {
@@ -740,7 +740,7 @@ const App: React.FC = () => {
           <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center text-center">
             <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center border border-emerald-50 scale-110">
               <Loader2 className="animate-spin text-emerald-600 mb-4" size={48} />
-              <p className="text-lg font-bold text-gray-800">Đang trích xuất dữ liệu AI...</p>
+              <p className="text-lg font-bold text-gray-800">Đang quét và xử lý thông tin...</p>
               <p className="text-xs text-gray-400 mt-2 font-medium">Vui lòng chờ trong giây lát</p>
             </div>
           </div>
