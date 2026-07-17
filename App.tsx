@@ -134,6 +134,69 @@ const App: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // API count tracking
+  const [apiCount, setApiCount] = useState<number>(() => {
+    try {
+      const today = new Date();
+      const monthKey = `${today.getMonth() + 1}-${today.getFullYear()}`;
+      const stored = localStorage.getItem('gemini_api_call_count');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.month === monthKey) {
+          return parsed.count || 0;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load API count:', e);
+    }
+    return 0;
+  });
+
+  const incrementApiCount = useCallback(() => {
+    setApiCount(prev => {
+      const newCount = prev + 1;
+      try {
+        const today = new Date();
+        const monthKey = `${today.getMonth() + 1}-${today.getFullYear()}`;
+        localStorage.setItem('gemini_api_call_count', JSON.stringify({ month: monthKey, count: newCount }));
+      } catch (e) {
+        console.error('Failed to save API count:', e);
+      }
+      return newCount;
+    });
+  }, []);
+
+  // Cooldown tracking (10s)
+  const [cooldownTime, setCooldownTime] = useState<number>(0);
+  const [isCooldownActive, setIsCooldownActive] = useState<boolean>(false);
+
+  const startCooldown = useCallback(() => {
+    setIsCooldownActive(true);
+    setCooldownTime(10);
+  }, []);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isCooldownActive && cooldownTime > 0) {
+      timer = setTimeout(() => {
+        setCooldownTime(prev => prev - 1);
+      }, 1000);
+    } else if (cooldownTime === 0) {
+      setIsCooldownActive(false);
+    }
+    return () => clearTimeout(timer);
+  }, [cooldownTime, isCooldownActive]);
+
+  const apiCountStatus = useMemo(() => {
+    if (apiCount < 500) {
+      return { bg: 'bg-emerald-50 border-emerald-100', text: 'text-emerald-700', val: 'text-emerald-800' };
+    }
+    if (apiCount < 700) {
+      return { bg: 'bg-amber-50 border-amber-100', text: 'text-amber-700', val: 'text-amber-800' };
+    }
+    return { bg: 'bg-rose-50 border-rose-100', text: 'text-rose-700', val: 'text-rose-800' };
+  }, [apiCount]);
   const [pdfUrl, setPdfUrl] = useState('');
   const [showGuidePopup, setShowGuidePopup] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -200,6 +263,7 @@ const App: React.FC = () => {
   };
 
   const processFile = async (file: File) => {
+    if (isLoading || isCooldownActive) return;
     setIsLoading(true);
     setError(null);
 
@@ -208,6 +272,8 @@ const App: React.FC = () => {
       reader.onload = async (event) => {
         const base64 = (event.target?.result as string).split(',')[1];
         try {
+          incrementApiCount();
+          startCooldown();
           const result = await extractInsuranceData({ base64, mimeType: file.type });
           const sanitized = sanitizeData(result);
           sanitized.licensePlate = formatLicensePlate(sanitized.licensePlate);
@@ -233,6 +299,7 @@ const App: React.FC = () => {
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isLoading || isCooldownActive) return;
     const file = e.target.files?.[0];
     if (file) {
 
@@ -249,7 +316,7 @@ const App: React.FC = () => {
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    if (activeTab === 'list') setIsDragging(true);
+    if (activeTab === 'list' && !isLoading && !isCooldownActive) setIsDragging(true);
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
@@ -260,17 +327,20 @@ const App: React.FC = () => {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
+    if (isLoading || isCooldownActive) return;
     if (activeTab === 'list' && e.dataTransfer.files?.[0]) {
       processFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleUrlExtract = async () => {
-    if (!pdfUrl) return;
+    if (!pdfUrl || isLoading || isCooldownActive) return;
     setIsLoading(true);
     setError(null);
 
     try {
+      incrementApiCount();
+      startCooldown();
       const result = await extractInsuranceData({ url: pdfUrl });
       const sanitized = sanitizeData(result);
       sanitized.licensePlate = formatLicensePlate(sanitized.licensePlate);
@@ -531,11 +601,15 @@ const App: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-800 leading-tight">Chúc cả nhà in 1.000 thẻ mỗi ngày <span className="text-[#ff0000] text-2xl drop-shadow-sm">❤️</span></h1>
-              <p className="text-[11px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">AUTO PRINT BY <span className="text-[#ff0000]">LEPS</span> - <span className="text-green-600">v173.2026</span></p>
+              <p className="text-[11px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">AUTO PRINT BY <span className="text-[#ff0000]">LEPS</span> - <span className="text-green-600">v174.2026</span></p>
             </div>
           </div>
           
           <div className="flex items-center space-x-4">
+            <div className={`flex flex-col items-end justify-center px-4 py-1 border rounded-2xl shrink-0 ${apiCountStatus.bg}`}>
+              <span className={`text-[9px] font-bold uppercase tracking-wider ${apiCountStatus.text}`}>Đã dùng tháng này</span>
+              <span className={`text-sm font-black ${apiCountStatus.val}`}>{apiCount} lượt</span>
+            </div>
             <button 
               onClick={() => setShowGuidePopup(true)} 
               className="p-1 text-black bg-[#ffea00] border-[2.5px] border-black rounded-full hover:bg-yellow-300 transition-colors relative group shadow-sm flex items-center justify-center shrink-0"
@@ -545,10 +619,31 @@ const App: React.FC = () => {
                 Hướng dẫn sử dụng
               </div>
             </button>
-            <label className="flex items-center space-x-2 px-6 py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-full cursor-pointer transition-all text-sm font-bold border border-blue-700 shadow-lg shadow-blue-600/20 relative">
-              <Upload size={18} strokeWidth={2.5} />
-              <span>UPLOAD file bảo hiểm điện tử ở đây</span>
-              <input type="file" className="hidden" accept="application/pdf,image/*" onChange={handleFileUpload} />
+            <label 
+              className={`flex items-center space-x-2 px-6 py-2.5 rounded-full cursor-pointer transition-all text-sm font-bold border shadow-lg relative ${
+                (isLoading || isCooldownActive)
+                  ? 'bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed shadow-none'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 border-blue-700 shadow-blue-600/20'
+              }`}
+            >
+              {isCooldownActive ? (
+                <>
+                  <Clock className="animate-pulse text-gray-400" size={18} />
+                  <span>Vui lòng đợi {cooldownTime}s...</span>
+                </>
+              ) : (
+                <>
+                  <Upload size={18} strokeWidth={2.5} />
+                  <span>UPLOAD file bảo hiểm điện tử ở đây</span>
+                </>
+              )}
+              <input 
+                type="file" 
+                className="hidden" 
+                accept="application/pdf,image/*" 
+                onChange={handleFileUpload} 
+                disabled={isLoading || isCooldownActive}
+              />
             </label>
             <button 
               onClick={handlePrint} 
