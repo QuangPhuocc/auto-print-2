@@ -18,7 +18,8 @@ export const extractInsuranceData = async (fileData: { base64?: string, mimeType
     if (!response.ok) {
       let errorMessage = "Lỗi máy chủ proxy";
       try {
-        const errorData = await response.json();
+        const clonedResponse = response.clone();
+        const errorData = await clonedResponse.json();
         errorMessage = errorData.error || errorMessage;
       } catch (jsonErr) {
         try {
@@ -32,7 +33,8 @@ export const extractInsuranceData = async (fileData: { base64?: string, mimeType
     }
 
     try {
-      return await response.json() as InsuranceData;
+      const clonedSuccess = response.clone();
+      return await clonedSuccess.json() as InsuranceData;
     } catch (parseErr) {
       throw new Error("Dữ liệu trả về từ máy chủ không hợp lệ.");
     }
