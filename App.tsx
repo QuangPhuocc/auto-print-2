@@ -135,37 +135,93 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // API count tracking
-  const [apiCount, setApiCount] = useState<number>(() => {
+  // Daily, Monthly, Yearly count tracking using cache (localStorage)
+  const [stats, setStats] = useState<{
+    ocr: { day: number; month: number; year: number };
+    print: { day: number; month: number; year: number };
+  }>(() => {
     try {
       const today = new Date();
+      const dayKey = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
       const monthKey = `${today.getMonth() + 1}-${today.getFullYear()}`;
-      const stored = localStorage.getItem('gemini_api_call_count');
+      const yearKey = `${today.getFullYear()}`;
+      const stored = localStorage.getItem('app_usage_stats_v3');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed.month === monthKey) {
-          return parsed.count || 0;
-        }
+        return {
+          ocr: {
+            day: parsed.ocr?.dayKey === dayKey ? (parsed.ocr?.day || 0) : 0,
+            month: parsed.ocr?.monthKey === monthKey ? (parsed.ocr?.month || 0) : 0,
+            year: parsed.ocr?.yearKey === yearKey ? (parsed.ocr?.year || 0) : 0,
+          },
+          print: {
+            day: parsed.print?.dayKey === dayKey ? (parsed.print?.day || 0) : 0,
+            month: parsed.print?.monthKey === monthKey ? (parsed.print?.month || 0) : 0,
+            year: parsed.print?.yearKey === yearKey ? (parsed.print?.year || 0) : 0,
+          }
+        };
       }
     } catch (e) {
-      console.error('Failed to load API count:', e);
+      console.error('Failed to load stats:', e);
     }
-    return 0;
+    return {
+      ocr: { day: 0, month: 0, year: 0 },
+      print: { day: 0, month: 0, year: 0 }
+    };
   });
 
-  const incrementApiCount = useCallback(() => {
-    setApiCount(prev => {
-      const newCount = prev + 1;
+  const incrementStats = useCallback((type: 'ocr' | 'print') => {
+    setStats(prev => {
+      const today = new Date();
+      const dayKey = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
+      const monthKey = `${today.getMonth() + 1}-${today.getFullYear()}`;
+      const yearKey = `${today.getFullYear()}`;
+
+      const newStats = {
+        ocr: { ...prev.ocr },
+        print: { ...prev.print }
+      };
+
+      newStats[type] = {
+        day: prev[type].day + 1,
+        month: prev[type].month + 1,
+        year: prev[type].year + 1
+      };
+
       try {
-        const today = new Date();
-        const monthKey = `${today.getMonth() + 1}-${today.getFullYear()}`;
-        localStorage.setItem('gemini_api_call_count', JSON.stringify({ month: monthKey, count: newCount }));
+        localStorage.setItem('app_usage_stats_v3', JSON.stringify({
+          ocr: { ...newStats.ocr, dayKey, monthKey, yearKey },
+          print: { ...newStats.print, dayKey, monthKey, yearKey }
+        }));
       } catch (e) {
-        console.error('Failed to save API count:', e);
+        console.error('Failed to save stats:', e);
       }
-      return newCount;
+      return newStats;
     });
   }, []);
+
+  const apiCount = stats.ocr.month;
+
+  const requestGPSCoordinates = (): Promise<{ latitude: number; longitude: number }> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Trình duyệt không hỗ trợ định vị GPS."));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+        },
+        (error) => {
+          reject(new Error("Vui lòng bật định vị GPS và cấp quyền truy cập vị trí để quét thông tin bảo hiểm."));
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+  };
 
   // Cooldown tracking (10s)
   const [cooldownTime, setCooldownTime] = useState<number>(0);
@@ -268,32 +324,36 @@ const App: React.FC = () => {
     setError(null);
 
     try {
+      const coords = await requestGPSCoordinates();
       const reader = new FileReader();
       reader.onload = async (event) => {
         const base64 = (event.target?.result as string).split(',')[1];
         try {
-          incrementApiCount();
           startCooldown();
-          const result = await extractInsuranceData({ base64, mimeType: file.type });
+          const result = await extractInsuranceData({ 
+            base64, 
+            mimeType: file.type,
+            latitude: coords.latitude,
+            longitude: coords.longitude
+          });
           const sanitized = sanitizeData(result);
           sanitized.licensePlate = formatLicensePlate(sanitized.licensePlate);
           sanitized.vehicleType = applyVehicleTypeLogic(sanitized.weight);
           setData(sanitized);
+          incrementStats('ocr');
         } catch (err: any) {
-
           ReactGA.event({
             category: "Scan",
             action: "Extract Failed",
           });
-        
-          setError(err.message || "Không thể trích xuất dữ liệu");
+          setError(err.message || "Quét không thành công. Vui lòng thử lại.");
         } finally {
           setIsLoading(false);
         }
       };
       reader.readAsDataURL(file);
-    } catch (err) {
-      setError("Lỗi khi đọc tệp tin.");
+    } catch (err: any) {
+      setError(err.message || "Quét không thành công. Vui lòng thử lại.");
       setIsLoading(false);
     }
   };
@@ -339,19 +399,24 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      incrementApiCount();
+      const coords = await requestGPSCoordinates();
       startCooldown();
-      const result = await extractInsuranceData({ url: pdfUrl });
+      const result = await extractInsuranceData({ 
+        url: pdfUrl,
+        latitude: coords.latitude,
+        longitude: coords.longitude
+      });
       const sanitized = sanitizeData(result);
       sanitized.licensePlate = formatLicensePlate(sanitized.licensePlate);
       sanitized.vehicleType = applyVehicleTypeLogic(sanitized.weight);
       setData(sanitized);
+      incrementStats('ocr');
       ReactGA.event({
         category: "Scan",
         action: "Extract Success",
       });
     } catch (err: any) {
-      setError(err.message || "Không thể trích xuất từ link này");
+      setError(err.message || "Quét không thành công. Vui lòng thử lại.");
     } finally {
       setIsLoading(false);
     }
@@ -442,6 +507,7 @@ const App: React.FC = () => {
       label: activeTab,
     });
   
+    incrementStats('print');
     window.print();
   };
 
@@ -606,9 +672,16 @@ const App: React.FC = () => {
           </div>
           
           <div className="flex items-center space-x-4">
-            <div className={`flex flex-col items-end justify-center px-4 py-1 border rounded-2xl shrink-0 ${apiCountStatus.bg}`}>
-              <span className={`text-[9px] font-bold uppercase tracking-wider ${apiCountStatus.text}`}>Đã dùng tháng này</span>
-              <span className={`text-sm font-black ${apiCountStatus.val}`}>{apiCount} lượt</span>
+            <div className="flex items-center space-x-3 bg-white px-4 py-1.5 border border-gray-200 rounded-2xl shadow-sm shrink-0">
+              <div className="flex flex-col items-start justify-center">
+                <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Quét OCR</span>
+                <span className="text-xs font-black text-emerald-600">Ngày: {stats.ocr.day} | Tháng: {stats.ocr.month} | Năm: {stats.ocr.year}</span>
+              </div>
+              <div className="h-6 w-[1px] bg-gray-200"></div>
+              <div className="flex flex-col items-start justify-center">
+                <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Đã in thẻ</span>
+                <span className="text-xs font-black text-blue-600">Ngày: {stats.print.day} | Tháng: {stats.print.month} | Năm: {stats.print.year}</span>
+              </div>
             </div>
             <button 
               onClick={() => setShowGuidePopup(true)} 

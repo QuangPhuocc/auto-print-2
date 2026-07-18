@@ -1,7 +1,7 @@
 
 import { InsuranceData } from "../types";
 
-export const extractInsuranceData = async (fileData: { base64?: string, mimeType?: string, url?: string }): Promise<InsuranceData> => {
+export const extractInsuranceData = async (fileData: { base64?: string, mimeType?: string, url?: string, latitude?: number, longitude?: number }): Promise<InsuranceData> => {
   try {
     const response = await fetch('/api/extract', {
       method: 'POST',
@@ -11,7 +11,9 @@ export const extractInsuranceData = async (fileData: { base64?: string, mimeType
       body: JSON.stringify({ 
         fileBase64: fileData.base64, 
         mimeType: fileData.mimeType,
-        url: fileData.url 
+        url: fileData.url,
+        latitude: fileData.latitude,
+        longitude: fileData.longitude
       }),
     });
 
