@@ -202,26 +202,7 @@ const App: React.FC = () => {
 
   const apiCount = stats.ocr.month;
 
-  const requestGPSCoordinates = (): Promise<{ latitude: number; longitude: number }> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error("Trình duyệt không hỗ trợ định vị GPS."));
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        },
-        (error) => {
-          reject(new Error("Vui lòng bật định vị GPS và cấp quyền truy cập vị trí để quét thông tin bảo hiểm."));
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    });
-  };
+
 
   // Cooldown tracking (10s)
   const [cooldownTime, setCooldownTime] = useState<number>(0);
@@ -324,7 +305,6 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      const coords = await requestGPSCoordinates();
       const reader = new FileReader();
       reader.onload = async (event) => {
         const base64 = (event.target?.result as string).split(',')[1];
@@ -332,9 +312,7 @@ const App: React.FC = () => {
           startCooldown();
           const result = await extractInsuranceData({ 
             base64, 
-            mimeType: file.type,
-            latitude: coords.latitude,
-            longitude: coords.longitude
+            mimeType: file.type
           });
           const sanitized = sanitizeData(result);
           sanitized.licensePlate = formatLicensePlate(sanitized.licensePlate);
@@ -399,12 +377,9 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      const coords = await requestGPSCoordinates();
       startCooldown();
       const result = await extractInsuranceData({ 
-        url: pdfUrl,
-        latitude: coords.latitude,
-        longitude: coords.longitude
+        url: pdfUrl
       });
       const sanitized = sanitizeData(result);
       sanitized.licensePlate = formatLicensePlate(sanitized.licensePlate);

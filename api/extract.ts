@@ -14,33 +14,15 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // 1. Chặn IP nước ngoài (Qua Header của Vercel)
+  // 1. Chặn IP nước ngoài (Qua Header của Vercel) - Hoàn toàn tự động, không hiện popup phiền phức
   const ipCountry = req.headers['x-vercel-ip-country'];
   if (ipCountry && typeof ipCountry === 'string' && ipCountry.toUpperCase() !== 'VN') {
-    return res.status(403).json({ error: "Truy cập bị chặn. Tính năng này chỉ hỗ trợ trong phạm vi Việt Nam." });
+    return res.status(403).json({ error: "Máy chủ không hợp lệ hoặc đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên." });
   }
 
-  const { fileBase64, mimeType, url, latitude, longitude } = req.body;
+  const { fileBase64, mimeType, url } = req.body;
   let finalBase64 = fileBase64;
   let finalMimeType = mimeType;
-
-  // 2. Kiểm tra định vị GPS
-  const isLocalhost = req.headers.host && (req.headers.host.includes("localhost") || req.headers.host.includes("127.0.0.1"));
-  if (!isLocalhost) {
-    if (latitude === undefined || longitude === undefined) {
-      return res.status(403).json({ error: "Không tìm thấy thông tin định vị. Vui lòng cho phép truy cập vị trí." });
-    }
-    
-    const lat = parseFloat(latitude);
-    const lng = parseFloat(longitude);
-    
-    // Kiểm tra xem tọa độ có nằm trong hộp giới hạn (Bounding Box) của Việt Nam hay không
-    // Vĩ độ Việt Nam khoảng: 8.0 đến 24.0. Kinh độ khoảng: 102.0 đến 110.0
-    const inVietnam = (lat >= 8.0 && lat <= 24.0) && (lng >= 102.0 && lng <= 110.0);
-    if (!inVietnam) {
-      return res.status(403).json({ error: "Vị trí thiết bị của bạn nằm ngoài phạm vi Việt Nam. Truy cập bị từ chối." });
-    }
-  }
 
   try {
     // Nếu người dùng gửi URL, server sẽ tự tải file về
