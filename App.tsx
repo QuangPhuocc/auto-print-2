@@ -116,7 +116,32 @@ const App: React.FC = () => {
     }
   };
 
+  const [issueYearSingleDigitMap, setIssueYearSingleDigitMap] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('insurance_issue_year_single_digit');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Failed to load issue year single digit map:', e);
+    }
+    return {
+      print_new: true,
+      print_old: true,
+      print_vass_red: true,
+      print_cathay: false,
+      print_custom: false
+    };
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('insurance_issue_year_single_digit', JSON.stringify(issueYearSingleDigitMap));
+    } catch (e) {
+      console.error('Failed to save issue year single digit map:', e);
+    }
+  }, [issueYearSingleDigitMap]);
+
   const activeLayoutKey = activeTab === 'list' ? 'print_new' : activeTab;
+  const isIssueYearSingleDigit = issueYearSingleDigitMap[activeLayoutKey] ?? (activeLayoutKey === 'print_cathay' || activeLayoutKey === 'print_custom' ? false : true);
   const elements = layouts[activeLayoutKey] || getDefaultForTab(activeLayoutKey);
 
   const setElements = useCallback((action: React.SetStateAction<PrintableElement[]>) => {
@@ -1049,6 +1074,25 @@ const App: React.FC = () => {
                       </button>
                     </div>
                     <div className="p-2 space-y-1">
+                      <div className="flex items-center justify-between p-3 rounded-xl border border-amber-200/70 bg-amber-50/60 mb-2 shadow-sm">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-gray-800">Năm cấp lấy 1 số cuối</span>
+                          <span className="text-[10px] text-gray-500 font-semibold">
+                            {isIssueYearSingleDigit ? 'Đang hiển thị 1 số (vd: 6)' : 'Đang hiển thị 2 số (vd: 26)'}
+                          </span>
+                        </div>
+                        <input 
+                          type="checkbox" 
+                          checked={isIssueYearSingleDigit} 
+                          onChange={(e) => {
+                            setIssueYearSingleDigitMap(prev => ({
+                              ...prev,
+                              [activeLayoutKey]: e.target.checked
+                            }));
+                          }}
+                          className="w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        />
+                      </div>
                       {elements.filter(e => !e.isCustom).map((el) => (
                         <div 
                           key={el.id} 

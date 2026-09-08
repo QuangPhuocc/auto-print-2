@@ -87,16 +87,9 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
       return numStr || value;
     }
 
-    // Năm cấp: chỉ lấy 1 chữ số cuối cùng
-    if (element.key === 'issueYear') {
-      const yearStr = value.trim();
-      return yearStr.length >= 1 ? yearStr.slice(-1) : yearStr;
-    }
-
-    // Năm BĐ/KT: chỉ lấy 2 số cuối
-    if (element.key === 'startYear' || element.key === 'endYear') {
-      const yearStr = value.trim();
-      return yearStr.length >= 2 ? yearStr.slice(-2) : yearStr;
+    // Các trường Năm (Năm cấp, Năm BĐ, Năm KT): sử dụng giá trị đã được định dạng
+    if (['issueYear', 'startYear', 'endYear'].includes(element.key as string)) {
+      return value;
     }
 
     return value;
