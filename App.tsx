@@ -324,6 +324,45 @@ const App: React.FC = () => {
     return sanitized;
   };
 
+  // Tự động đọc dữ liệu deep link từ URL params (?tab=...&data=...)
+  useEffect(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get('tab') as TabType | null;
+      const dataParam = searchParams.get('data');
+
+      if (tabParam && ['print_new', 'print_old', 'print_vass_red', 'print_cathay', 'print_custom'].includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
+
+      if (dataParam) {
+        let jsonStr = '';
+        try {
+          jsonStr = decodeURIComponent(atob(dataParam));
+        } catch {
+          try {
+            jsonStr = atob(dataParam);
+          } catch {
+            jsonStr = dataParam;
+          }
+        }
+        const parsed = JSON.parse(jsonStr);
+        if (parsed && typeof parsed === 'object') {
+          const sanitized = sanitizeData(parsed);
+          if (sanitized.licensePlate) {
+            sanitized.licensePlate = formatLicensePlate(sanitized.licensePlate);
+          }
+          if (sanitized.weight) {
+            sanitized.vehicleType = applyVehicleTypeLogic(sanitized.weight);
+          }
+          setData(prev => ({ ...prev, ...sanitized }));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse URL query params:', e);
+    }
+  }, []);
+
   const processFile = async (file: File) => {
     if (isLoading || isCooldownActive) return;
     setIsLoading(true);
